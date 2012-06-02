@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Driver", "Driver\Driver.vcxproj", "{95C7FDF6-61B6-40CB-BB68-306AEA7E1F2F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestApp", "TestApp\TestApp.vcxproj", "{E1B97FE0-3D55-487A-ABD7-11754B04ABF8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{95C7FDF6-61B6-40CB-BB68-306AEA7E1F2F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{95C7FDF6-61B6-40CB-BB68-306AEA7E1F2F}.Debug|Win32.Build.0 = Debug|Win32
+		{95C7FDF6-61B6-40CB-BB68-306AEA7E1F2F}.Release|Win32.ActiveCfg = Release|Win32
+		{95C7FDF6-61B6-40CB-BB68-306AEA7E1F2F}.Release|Win32.Build.0 = Release|Win32
+		{E1B97FE0-3D55-487A-ABD7-11754B04ABF8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E1B97FE0-3D55-487A-ABD7-11754B04ABF8}.Debug|Win32.Build.0 = Debug|Win32
+		{E1B97FE0-3D55-487A-ABD7-11754B04ABF8}.Release|Win32.ActiveCfg = Release|Win32
+		{E1B97FE0-3D55-487A-ABD7-11754B04ABF8}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
