@@ -4,9 +4,6 @@
 static UNICODE_STRING  usSymbolicLink = RTL_CONSTANT_STRING(L"\\DosDevices\\CleanUp");
 static UNICODE_STRING  usDeviceName = RTL_CONSTANT_STRING(L"\\Device\\CleanUp");
 
-PVOID buffer = NULL;
-ULONG_PTR lenBuffer = 0;
-
 VOID
 OnDriverUnload(PDRIVER_OBJECT   pDriverObj)
 {
@@ -19,9 +16,16 @@ NTSTATUS
 OnCleanup(PDEVICE_OBJECT pDeviceObj, PIRP pIrp)
 {
 	DbgPrint("OnCleanup\n");
-	if (buffer)
+	PIO_STACK_LOCATION pStack;
+
+	pStack = IoGetCurrentIrpStackLocation(pIrp);
+	if (pStack->FileObject->FsContext)
 	{
-		ExFreePoolWithTag(buffer, 'rdrw');
+		PUNICODE_STRING us;
+		us = (PUNICODE_STRING)pStack->FileObject->FsContext;
+		RtlFreeUnicodeString(us);
+		ExFreePoolWithTag(us, '1234');
+
 	}
 
     return STATUS_SUCCESS;
@@ -31,25 +35,24 @@ NTSTATUS
 OnWrite(PDEVICE_OBJECT pDeviceObj, PIRP pIrp)
 {
 	DbgPrint("OnWrite\n");
+	PIO_STACK_LOCATION pStack;
+	PUNICODE_STRING us;
+
+	pStack = IoGetCurrentIrpStackLocation(pIrp);
+
+	ANSI_STRING as;
+	as.Buffer = (PCHAR)pIrp->AssociatedIrp.SystemBuffer;
+	as.Length = pStack->Parameters.Write.Length;
+	as.MaximumLength = pStack->Parameters.Write.Length;
+
+	us = (PUNICODE_STRING)ExAllocatePoolWithTag(PagedPool, sizeof(UNICODE_STRING), '1234');
+	RtlAnsiStringToUnicodeString(us, &as, TRUE);
+
+	pStack->FileObject->FsContext = us;
 	
-	PIO_STACK_LOCATION sl;
-
-	sl = IoGetCurrentIrpStackLocation(pIrp);
-	if (buffer)
-		ExFreePoolWithTag(buffer, 'rdrw');
-
-	if ( (buffer = ExAllocatePoolWithTag(PagedPool, sl->Parameters.Write.Length, 'rdrw')) == NULL) {
-		DbgPrint("Erro ao alocar memoria\n");
-		pIrp->IoStatus.Status = STATUS_INSUFFICIENT_RESOURCES;
-		return pIrp->IoStatus.Status;
-	}
-
-	RtlZeroMemory(buffer, sl->Parameters.Write.Length);
-	RtlCopyMemory(buffer, pIrp->AssociatedIrp.SystemBuffer, sl->Parameters.Write.Length);
-	lenBuffer = sl->Parameters.Write.Length;
+	IoCompleteRequest(pIrp, IO_NO_INCREMENT);
 
 	pIrp->IoStatus.Status = STATUS_SUCCESS;	
-	IoCompleteRequest(pIrp, IO_NO_INCREMENT);
 
     return pIrp->IoStatus.Status;
 }
@@ -58,18 +61,23 @@ NTSTATUS
 OnRead(PDEVICE_OBJECT pDeviceObj, PIRP pIrp)
 {
 	DbgPrint("OnRead\n");
-	PIO_STACK_LOCATION sl;
+	PIO_STACK_LOCATION pStack;
+	PUNICODE_STRING us;
 
-	sl = IoGetCurrentIrpStackLocation(pIrp);
-	pIrp->IoStatus.Status = STATUS_SUCCESS;
-	pIrp->IoStatus.Information = min(sl->Parameters.Write.Length, lenBuffer);
+	pStack = IoGetCurrentIrpStackLocation(pIrp);
+	us = (PUNICODE_STRING)pStack->FileObject->FsContext;
+	ANSI_STRING as;
 
-	min(sl->Parameters.Write.Length, lenBuffer);
+	RtlUnicodeStringToAnsiString(&as, us, TRUE);
 
-	RtlZeroMemory(pIrp->AssociatedIrp.SystemBuffer, sl->Parameters.Read.Length);
-	RtlCopyMemory(pIrp->AssociatedIrp.SystemBuffer, buffer, min(sl->Parameters.Write.Length, pIrp->IoStatus.Information));
+	RtlZeroMemory(pIrp->AssociatedIrp.SystemBuffer, pStack->Parameters.Read.Length);
+	RtlCopyMemory(pIrp->AssociatedIrp.SystemBuffer, as.Buffer, min(pStack->Parameters.Write.Length, as.Length));
+	pIrp->IoStatus.Information = min(pStack->Parameters.Write.Length, as.Length);
 
-    return STATUS_SUCCESS;
+	IoCompleteRequest(pIrp, IO_NO_INCREMENT);
+
+	pIrp->IoStatus.Status = STATUS_SUCCESS;	
+    return pIrp->IoStatus.Status;
 }
 
 NTSTATUS
