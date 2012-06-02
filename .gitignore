@@ -17,6 +17,9 @@
 *.suo
 *.user
 Debug
+Release
+*.sdf
+*.opensdf
 
 #Winddk
 objchk*
