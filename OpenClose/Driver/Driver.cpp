@@ -1,5 +1,4 @@
-#include <ntddk.h>
-
+#include "Driver.h"
 
 static UNICODE_STRING  usSymbolicLink = RTL_CONSTANT_STRING(L"\\DosDevices\\CleanUp");
 static UNICODE_STRING  usDeviceName = RTL_CONSTANT_STRING(L"\\Device\\CleanUp");
@@ -7,6 +6,9 @@ static UNICODE_STRING  usDeviceName = RTL_CONSTANT_STRING(L"\\Device\\CleanUp");
 VOID
 OnDriverUnload(PDRIVER_OBJECT   pDriverObj)
 {
+	if (!strig_list)
+		ExFreePoolWithTag(strig_list, 'strl');
+
     IoDeleteSymbolicLink(&usSymbolicLink);
     IoDeleteDevice(pDriverObj->DeviceObject);
 }
@@ -36,7 +38,6 @@ OnWrite(PDEVICE_OBJECT pDeviceObj, PIRP pIrp)
 {
 	DbgPrint("OnWrite\n");
 	PIO_STACK_LOCATION pStack;
-	PUNICODE_STRING us;
 
 	pStack = IoGetCurrentIrpStackLocation(pIrp);
 
@@ -44,6 +45,8 @@ OnWrite(PDEVICE_OBJECT pDeviceObj, PIRP pIrp)
 	as.Buffer = (PCHAR)pIrp->AssociatedIrp.SystemBuffer;
 	as.Length = pStack->Parameters.Write.Length;
 	as.MaximumLength = pStack->Parameters.Write.Length;
+
+	PString_List us = (PString_List)ExAllocatePoolWithTag(NonPagedPool, sizeof(String_List), '1234');
 
 	us = (PUNICODE_STRING)ExAllocatePoolWithTag(PagedPool, sizeof(UNICODE_STRING), '1234');
 	RtlAnsiStringToUnicodeString(us, &as, TRUE);
@@ -86,10 +89,12 @@ OnCreate(PDEVICE_OBJECT pDeviceObj,
 {
 	DbgPrint("OnCreate\n");
     pIrp->IoStatus.Status = STATUS_SUCCESS;
-    pIrp->IoStatus.Information = 0;
+    pIrp->IoStatus.Information = 0;	
 
     IoCompleteRequest(pIrp, IO_NO_INCREMENT);
-    return STATUS_SUCCESS;
+    
+	return STATUS_SUCCESS;
+
 }
 
 
@@ -138,6 +143,12 @@ DriverEntry(PDRIVER_OBJECT  pDriverObj,
                                &usDeviceName);
     if (!NT_SUCCESS(nts))
         IoDeleteDevice(pDeviceObj);
+
+
+	PString_List strig_list;
+	strig_list = (PString_List)ExAllocatePoolWithTag(NonPagedPool, sizeof(String_List), 'strl');
+	InitializeListHead(&strig_list->entry);
+	pDeviceObj->DeviceExtension = strig_list;
 	
     return nts;
 }
