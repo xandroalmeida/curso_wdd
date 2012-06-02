@@ -45,6 +45,9 @@ OnWrite(PDEVICE_OBJECT pDeviceObj, PIRP pIrp)
 	as.Buffer = (PCHAR)pIrp->AssociatedIrp.SystemBuffer;
 	as.Length = pStack->Parameters.Write.Length;
 	as.MaximumLength = pStack->Parameters.Write.Length;
+	PString_List string_list = pDeviceObj->DeviceExtension;
+
+	Isto deveria estar apenasnoteste
 
 	PString_List us = (PString_List)ExAllocatePoolWithTag(NonPagedPool, sizeof(String_List), '1234');
 
