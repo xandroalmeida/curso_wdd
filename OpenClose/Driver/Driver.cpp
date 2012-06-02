@@ -6,9 +6,6 @@ static UNICODE_STRING  usDeviceName = RTL_CONSTANT_STRING(L"\\Device\\CleanUp");
 VOID
 OnDriverUnload(PDRIVER_OBJECT   pDriverObj)
 {
-	if (!strig_list)
-		ExFreePoolWithTag(strig_list, 'strl');
-
     IoDeleteSymbolicLink(&usSymbolicLink);
     IoDeleteDevice(pDriverObj->DeviceObject);
 }
@@ -21,15 +18,6 @@ OnCleanup(PDEVICE_OBJECT pDeviceObj, PIRP pIrp)
 	PIO_STACK_LOCATION pStack;
 
 	pStack = IoGetCurrentIrpStackLocation(pIrp);
-	if (pStack->FileObject->FsContext)
-	{
-		PUNICODE_STRING us;
-		us = (PUNICODE_STRING)pStack->FileObject->FsContext;
-		RtlFreeUnicodeString(us);
-		ExFreePoolWithTag(us, '1234');
-
-	}
-
     return STATUS_SUCCESS;
 }
 
@@ -45,15 +33,17 @@ OnWrite(PDEVICE_OBJECT pDeviceObj, PIRP pIrp)
 	as.Buffer = (PCHAR)pIrp->AssociatedIrp.SystemBuffer;
 	as.Length = pStack->Parameters.Write.Length;
 	as.MaximumLength = pStack->Parameters.Write.Length;
-	PString_List string_list = pDeviceObj->DeviceExtension;
 
-	PString_List us = (PString_List)ExAllocatePoolWithTag(NonPagedPool, sizeof(String_List), '1234');
+	{
+	PString_Entry list = (PString_Entry)pDeviceObj->DeviceExtension;
+	PString_Entry entry = (PString_Entry)ExAllocatePoolWithTag(NonPagedPool, sizeof(String_Entry), 'strl');
 
-	us = (PUNICODE_STRING)ExAllocatePoolWithTag(PagedPool, sizeof(UNICODE_STRING), '1234');
-	RtlAnsiStringToUnicodeString(us, &as, TRUE);
+	PUNICODE_STRING us = (PUNICODE_STRING)ExAllocatePoolWithTag(PagedPool, sizeof(UNICODE_STRING), '1234');
+	RtlAnsiStringToUnicodeString(&entry->usString, &as, TRUE);
 
-	pStack->FileObject->FsContext = us;
-	
+	InsertTailList(&list->entry, &entry->entry);
+	}
+
 	IoCompleteRequest(pIrp, IO_NO_INCREMENT);
 
 	pIrp->IoStatus.Status = STATUS_SUCCESS;	
@@ -145,11 +135,15 @@ DriverEntry(PDRIVER_OBJECT  pDriverObj,
     if (!NT_SUCCESS(nts))
         IoDeleteDevice(pDeviceObj);
 
+	PString_Entry strig_entry;
+	strig_entry = (PString_Entry)ExAllocatePoolWithTag(NonPagedPool, sizeof(String_Entry), 'strl');
+	InitializeListHead(&strig_entry->entry);
 
-	PString_List strig_list;
-	strig_list = (PString_List)ExAllocatePoolWithTag(NonPagedPool, sizeof(String_List), 'strl');
-	InitializeListHead(&strig_list->entry);
-	pDeviceObj->DeviceExtension = strig_list;
+	PDevice_Extension de = (PDevice_Extension)ExAllocatePoolWithTag(PagedPool, sizeof(Device_Extension), 'ex00');
+	de->listHead = strig_entry->entry;
+	KeInitializeSpinLock(&de->slock);
+	de->Users = 0;
+	pDeviceObj->DeviceExtension = de;
 	
     return nts;
 }
