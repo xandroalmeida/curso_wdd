@@ -8,5 +8,9 @@
 
 # Compiled Static libraries
 *.lai
-*.la
+*.las
 *.a
+
+# Visual Studio
+*.suo
+*.user
