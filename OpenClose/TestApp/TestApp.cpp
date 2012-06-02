@@ -1,28 +1,65 @@
 #include <stdio.h>
+#include <conio.h>
 #include <Windows.h>
 
 int __cdecl main(int argc,
-                 char* argv[])
+	char* argv[])
 {
-    HANDLE  hDevice;
+	HANDLE  hDevice;
+	TCHAR szNotepadPath[MAX_PATH];
+	STARTUPINFO StartupInfo = {0};
+	PROCESS_INFORMATION ProcessInfo = {0};
 
-    hDevice = CreateFile("\\\\.\\OpenClose",
-                         GENERIC_READ,
-                         0,
-                         NULL,
-                         OPEN_EXISTING,
-                         0,
-                         NULL);
+	hDevice = CreateFile("\\\\.\\CleanUp",
+		GENERIC_READ,
+		0,
+		NULL,
+		OPEN_EXISTING,
+		0,
+		NULL);
 
-    if (hDevice == INVALID_HANDLE_VALUE)
-    {
-        printf("Erro #%d ao abrir device.\n",
-               GetLastError());
-        return 0;
-    }
+	__try
+	{
+		if (hDevice == INVALID_HANDLE_VALUE)
+		{
+			printf("Erro #%d ao abrir device.\n",
+				GetLastError());
+		}
 
-    printf("Device aberto com sucesso!\n");
-    CloseHandle(hDevice);
+		printf("Device aberto com sucesso!\n");
+		GetWindowsDirectory(szNotepadPath,sizeof(szNotepadPath));
 
-    return 0;
+		strcat_s(szNotepadPath,sizeof(szNotepadPath),"\\notepad.exe");
+
+		if (!CreateProcess(NULL, 
+			szNotepadPath, 
+			NULL,
+			NULL,
+			FALSE,
+			0,
+			NULL,
+			NULL, 
+			&StartupInfo, 
+			&ProcessInfo)) {
+				printf("Erro ao criar o processo #%d\n", GetLastError());
+		}
+
+		printf ("Processo criado com sucesso\n");
+		printf ("Tecle algo para duplicar o handle\n");
+
+		_getch();
+	}
+	__finally
+	{
+		if (ProcessInfo.hProcess)
+			CloseHandle(ProcessInfo.hProcess);
+
+		if (ProcessInfo.hThread)
+			CloseHandle(ProcessInfo.hThread);
+
+		if (hDevice)
+			CloseHandle(hDevice);
+	}
+
+	return 0;
 }

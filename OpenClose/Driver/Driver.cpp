@@ -1,19 +1,30 @@
 #include <ntddk.h>
 
+
+static UNICODE_STRING  usSymbolicLink = RTL_CONSTANT_STRING(L"\\DosDevices\\CleanUp");
+static UNICODE_STRING  usDeviceName = RTL_CONSTANT_STRING(L"\\Device\\CleanUp");
+
 VOID
 OnDriverUnload(PDRIVER_OBJECT   pDriverObj)
 {
-    UNICODE_STRING  usSymbolicLink = RTL_CONSTANT_STRING(L"\\DosDevices\\OpenClose");
-
     IoDeleteSymbolicLink(&usSymbolicLink);
     IoDeleteDevice(pDriverObj->DeviceObject);
 }
 
 
 NTSTATUS
+OnCleanup(PDEVICE_OBJECT pDeviceObj, PIRP pIrp)
+{
+	DbgPrint("OnCleanup\n");
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS
 OnCreate(PDEVICE_OBJECT pDeviceObj,
          PIRP           pIrp)
 {
+	DbgPrint("OnCreate\n");
     pIrp->IoStatus.Status = STATUS_SUCCESS;
     pIrp->IoStatus.Information = 0;
 
@@ -26,6 +37,7 @@ NTSTATUS
 OnClose(PDEVICE_OBJECT  pDeviceObj,
         PIRP            pIrp)
 {
+	DbgPrint("OnClose\n");
     pIrp->IoStatus.Status = STATUS_SUCCESS;
     pIrp->IoStatus.Information = 0;
 
@@ -38,16 +50,15 @@ extern "C" NTSTATUS
 DriverEntry(PDRIVER_OBJECT  pDriverObj,
             PUNICODE_STRING pusRegistryPath)
 {
+	DbgPrint("DriverEntry\n");
     NTSTATUS        nts;
-    UNICODE_STRING  usDeviceName = RTL_CONSTANT_STRING(L"\\Device\\OpenClose");
-    UNICODE_STRING  usSymbolicLink = RTL_CONSTANT_STRING(L"\\DosDevices\\OpenClose");
     PDEVICE_OBJECT  pDeviceObj = NULL;
 
     pDriverObj->DriverUnload = OnDriverUnload;
 
     pDriverObj->MajorFunction[IRP_MJ_CREATE] = OnCreate;
     pDriverObj->MajorFunction[IRP_MJ_CLOSE] = OnClose;
-
+	pDriverObj->MajorFunction[IRP_MJ_CLEANUP] = OnCleanup;
 
     nts = IoCreateDevice(pDriverObj,
                          0,

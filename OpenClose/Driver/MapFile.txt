@@ -1,0 +1,3 @@
+map
+\??\C:\Windows\system32\drivers\OpenClose.sys
+C:\curso_wdd\OpenClose\Driver\objchk_wxp_x86\i386\OpenClose.sys
