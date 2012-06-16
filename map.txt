@@ -1,9 +1,10 @@
+#_NT_KD_FILE
 #map
 #\??\c:\windows\system32\drivers\hellokernel.sys
 #C:\Users\Education\Documents\Projetos\DriverEntry\hello\objchk_win7_x86\i386\HelloKernel.sys
 
 map
-\??\c:\windows\system32\drivers\IoctlCopy.sys
-C:\Users\Education\Documents\GitHub\curso_wdd\IoctlCopy\Driver\objchk_wxp_x86\i386\IoctlCopy.sys
+\??\c:\windows\system32\drivers\IoctlTimer.sys
+D:\curso_wdd\IoctlTimer\Driver\objchk_wxp_x86\i386\IoctlTimer.sys
 
 

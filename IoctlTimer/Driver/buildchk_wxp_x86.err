@@ -1,0 +1,4 @@
+0>errors in directory z:\cursos~1\introd~1\cd\samples\ioctlt~1\driver
+0>DeleteFileW(z:\cursos~1\introd~1\cd\samples\ioctlt~1\driver\objchk_wxp_x86\i386\ioctltimer.pdb) failed, Error=0x00000005
+1>errors in directory z:\cursos~1\introd~1\cd\samples\ioctlt~1\driver
+1>link : error LNK1201: error writing to program database 'z:\cursos~1\introd~1\cd\samples\ioctlt~1\driver\objchk_wxp_x86\i386\IoctlTimer.pdb'; check for insufficient disk space, invalid path, or insufficient privilege

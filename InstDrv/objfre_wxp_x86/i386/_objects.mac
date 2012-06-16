@@ -1,0 +1,16 @@
+
+
+386_OBJECTS=\
+ $(OBJ_PATH)\$O\instdrv.obj \
+
+
+
+
+
+# lowercased
+BASEDIR=d:\winddk\760016~1.1
+OBJECT_ROOT=d:\winddk\760016~1.1
+MAKEDIR_LOWERCASE=c:\users\educat~1\docume~1\github\curso_~1\instdrv
+OBJ_PATH=c:\users\educat~1\docume~1\github\curso_~1\instdrv
+CONCURRENT_MIDL=0
+CONCURRENT_MANIFEST_BUILD=0
