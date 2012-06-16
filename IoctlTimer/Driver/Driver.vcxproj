@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F24620E6-C122-45DF-AD7F-F6390193E824}</ProjectGuid>
+    <ProjectGuid>{8D704265-CF11-42FC-A961-4B6C6D64D409}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -55,10 +55,10 @@
     <None Include="sources" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Common\IoctlCopy.h" />
+    <ClCompile Include="Driver.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Driver.cpp" />
+    <ClInclude Include="..\Common\IoctlTimer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

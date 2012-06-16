@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F24620E6-C122-45DF-AD7F-F6390193E824}</ProjectGuid>
+    <ProjectGuid>{91468916-EE26-4DEB-972C-3765DBBE62CB}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -35,14 +35,14 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <NMakeBuildCommandLine>ddkbuild -W7XP checked .</NMakeBuildCommandLine>
-    <NMakeOutput>Driver.exe</NMakeOutput>
+    <NMakeOutput>TestApp.exe</NMakeOutput>
     <NMakeReBuildCommandLine>ddkbuild -W7XP checked . -cZ</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>DBG=1;_NT_TARGET_VERSION=0x0501;_WIN32_WINNT=0x0501;_X86_;NTDDI_VERSION=0x05010200;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>C:\WinDDK\7600.16385.1\inc\api;C:\WinDDK\7600.16385.1\inc\crt;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\wdf\kmdf\1.9;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeBuildCommandLine>ddkbuild -W7XP free .</NMakeBuildCommandLine>
-    <NMakeOutput>Driver.exe</NMakeOutput>
+    <NMakeOutput>TestApp.exe</NMakeOutput>
     <NMakeReBuildCommandLine>ddkbuild -W7XP free . -cZ</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>DBG=0;_NT_TARGET_VERSION=0x0501;_WIN32_WINNT=0x0501;_X86_;NTDDI_VERSION=0x05010200;WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>C:\WinDDK\7600.16385.1\inc\api;C:\WinDDK\7600.16385.1\inc\crt;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\wdf\kmdf\1.9;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
@@ -55,10 +55,10 @@
     <None Include="sources" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Common\IoctlCopy.h" />
+    <ClCompile Include="TestApp.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Driver.cpp" />
+    <ClInclude Include="..\Common\IoctlTimer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
