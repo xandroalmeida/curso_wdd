@@ -10,3 +10,5 @@ Cola
 ====
 
 !devstack
+!handle
+!object
