@@ -46,10 +46,42 @@ NTSTATUS
 OnFilterWrite(PDEVICE_OBJECT pDeviceObj,
               PIRP           pIrp)
 {
-    PIO_STACK_LOCATION  pStack;
+
+	NTSTATUS nts;
+
+    PIO_STACK_LOCATION  pStack,
+						pNextStack;
+
+	PIRP pNewIrp;
+
     PDEVICE_EXTENSION   pDeviceExt;
 
-    KdPrint(("DupString.sys >> OnFilterWrite\n"));
+	KEVENT kEvent;
+	IO_STATUS_BLOCK statusBlock;
+
+	KeInitializeEvent(&kEvent, NotificationEvent, FALSE);
+	pStack = IoGetCurrentIrpStackLocation(pIrp);
+	pDeviceExt = (PDEVICE_EXTENSION) pDeviceObj->DeviceExtension;
+	pNewIrp = IoBuildSynchronousFsdRequest(IRP_MJ_WRITE,
+		pDeviceExt->pNextDeviceObj,
+		pIrp->AssociatedIrp.SystemBuffer,
+		pStack->Parameters.Write.Length,
+		&pStack->Parameters.Write.ByteOffset,
+		&kEvent,
+		&statusBlock);
+
+
+	if (pNewIrp) {
+		pNextStack = IoGetNextIrpStackLocation(pNewIrp);
+		pNextStack->FileObject = pStack->FileObject;
+		nts = IoCallDriver(pDeviceExt->pNextDeviceObj, pNewIrp);
+
+		if (nts == STATUS_SUCCESS) {
+			KeWaitForSingleObject(&kEvent, Executive, KernelMode, FALSE, NULL);
+		    KdPrint(("DupString.sys >> OnFilterWrite\n"));
+
+		}
+	}
 
     pDeviceExt = (PDEVICE_EXTENSION)pDeviceObj->DeviceExtension;
 

@@ -1,4 +1,6 @@
 #include <ntddk.h>
+#include <csq.h>
+
 
 #define CSQ_LIST_TAG    'LrtS'
 #define CSQ_LIST_TIME   5
@@ -21,6 +23,11 @@ typedef struct _DEVICE_EXTENSION
     ULONG           ulUsers;
     ULONG           ulSeconds;
     PIO_WORKITEM    pWorkItem;
+
+	IO_CSQ			CancelSafeQueue;
+	LIST_ENTRY		IrpListHead;
+	KSPIN_LOCK		IrpListLock;
+	PIRP			pCurrentItrp;
 
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
@@ -115,10 +122,20 @@ OnCleanup(PDEVICE_OBJECT    pDeviceObj,
     PDEVICE_EXTENSION   pDevExtension;
     PUNICODE_STRING     pusString;
     KIRQL               kIrql;
+	PIO_STACK_LOCATION pStack;
+	PIRP pPendingIrp;
 
     KdPrint(("CsqList.sys >> OnCleanup\n"));
 
-    pDevExtension = (PDEVICE_EXTENSION)pDeviceObj->DeviceExtension;
+	pStack = IoGetCurrentIrpStackLocation(pIrp);
+	pDevExtension = (PDEVICE_EXTENSION)pDeviceObj->DeviceExtension;
+
+	while ((pPendingIrp = IoCsqRemoveNextIrp(&pDevExtension->CancelSafeQueue, pStack->FileObject)))
+	{
+		pPendingIrp->IoStatus.Status = STATUS_CANCELLED;
+		pPendingIrp->IoStatus.Information = 0;
+		IoCompleteRequest(pPendingIrp, IO_NO_INCREMENT);
+	}
 
     KeAcquireSpinLock(&pDevExtension->kSpinlock,
                       &kIrql);
@@ -240,13 +257,16 @@ OnWrite(IN PDEVICE_OBJECT  pDeviceObj,
     }
     else
     {
-        IoMarkIrpPending(pIrp);
+		nts = IoCsqInsertIrpEx(&pDevExtension->CancelSafeQueue, pIrp, NULL,NULL);
+		if (!NT_SUCCESS(nts)) 
+		{
+			IoMarkIrpPending(pIrp);
 
-        IoStartPacket(pDeviceObj,
+			IoStartPacket(pDeviceObj,
                       pIrp,
                       NULL,
                       NULL);
-
+		}
         nts = STATUS_PENDING;
     }
 
@@ -292,9 +312,13 @@ OnFinishTimer(PDEVICE_OBJECT    pDeviceObj,
         __try
         {
             IoStopTimer(pDeviceObj);
+			pDevExtension = (PDEVICE_EXTENSION)pDeviceObj->DeviceExtension;
 
             pIrp = pDeviceObj->CurrentIrp;
-            pStack = IoGetCurrentIrpStackLocation(pIrp);
+			if (pIrp->Cancel)
+				ExRaiseStatus(STATUS_CANCELLED);
+
+			pStack = IoGetCurrentIrpStackLocation(pIrp);
             pDevExtension = (PDEVICE_EXTENSION)pDeviceObj->DeviceExtension;
 
             RtlInitAnsiString(&asString,
@@ -344,10 +368,11 @@ OnFinishTimer(PDEVICE_OBJECT    pDeviceObj,
     pIrp->IoStatus.Information = info;
     IoCompleteRequest(pIrp, IO_NO_INCREMENT);
 
-    KeRaiseIrql(DISPATCH_LEVEL, &kIrql);
-    IoStartNextPacket(pDeviceObj,
-                      FALSE);
-    KeLowerIrql(kIrql);
+	pIrp = IoCsqRemoveNextIrp(&pDevExtension->CancelSafeQueue,NULL);
+	
+	if (pIrp)
+		OnStartIo(pDeviceObj, pIrp);
+
 }
 
 
@@ -364,8 +389,11 @@ OnTimer(PDEVICE_OBJECT  pDeviceObj,
 
     if (pDevExtension->ulSeconds)
     {
-        if (!--pDevExtension->ulSeconds)
+        if (!--pDevExtension->ulSeconds ||
+			pDevExtension->pCurrentItrp->Cancel)
         {
+
+			pDevExtension->ulSeconds = 0;
             IoQueueWorkItem(pDevExtension->pWorkItem,
                             OnFinishTimer,
                             DelayedWorkQueue,
@@ -374,7 +402,101 @@ OnTimer(PDEVICE_OBJECT  pDeviceObj,
     }
 }
 
+VOID
+	CsqAcquireLock(PIO_CSQ pCsq, PKIRQL pkIrql)
+{
+	PDEVICE_EXTENSION pDevExtension;
 
+	pDevExtension = CONTAINING_RECORD(pCsq, DEVICE_EXTENSION, CancelSafeQueue);
+	KeAcquireSpinLock(&pDevExtension->IrpListLock, pkIrql);
+}
+
+VOID
+CsqReleaseLock(PIO_CSQ pCsq, KIRQL kIrql)
+{
+	PDEVICE_EXTENSION pDevExtension;
+
+	pDevExtension = CONTAINING_RECORD(pCsq, DEVICE_EXTENSION, CancelSafeQueue);
+	KeReleaseSpinLock(&pDevExtension->IrpListLock, kIrql);
+}
+
+VOID
+	CsqCompleteCanceledIrp(PIO_CSQ pCsq, PIRP pIrp)
+{
+	pIrp->IoStatus.Status = STATUS_CANCELLED;
+	pIrp->IoStatus.Information = 0;
+	IoCompleteRequest(pIrp, IO_NO_INCREMENT);
+}
+
+PIRP
+CsqPeekNextIrp(PIO_CSQ pCsq,
+	PIRP pIrp,
+	PVOID pContext)
+{
+	PIO_STACK_LOCATION pStack;
+	PDEVICE_EXTENSION pDevExtension;
+	PIRP pNextIrp = NULL;
+	PLIST_ENTRY pNextEntry;
+
+	pDevExtension = CONTAINING_RECORD(pCsq, DEVICE_EXTENSION, CancelSafeQueue);
+	if (pIrp)
+		pNextEntry = pIrp->Tail.Overlay.ListEntry.Flink;
+	else
+		pNextEntry = pDevExtension->IrpListHead.Flink;
+
+
+	while (pNextEntry != &pDevExtension->IrpListHead)
+	{
+		pNextIrp = CONTAINING_RECORD(pNextEntry, IRP, Tail.Overlay.ListEntry);
+
+		if (!pContext)
+			break;
+
+		pStack = IoGetCurrentIrpStackLocation(pNextIrp);
+		if(pStack->FileObject == pContext)
+			break;
+
+		pNextIrp = NULL;
+		pNextEntry = pNextEntry->Flink;
+	}
+
+	if (!pContext)
+		pDevExtension->pCurrentItrp = pNextIrp;
+
+	return pNextIrp;
+}
+
+VOID
+CsqRemoveIrp(PIO_CSQ pCsq,
+	PIRP pIrp)
+{
+	UNREFERENCED_PARAMETER(pCsq);
+	RemoveEntryList(&pIrp->Tail.Overlay.ListEntry);
+}
+
+NTSTATUS
+	CsqInsertIrpEx(PIO_CSQ pCsq,
+	PIRP pIrp,
+	PVOID pContext)
+{
+	NTSTATUS nts;
+	PDEVICE_EXTENSION pDevExtension;
+
+	pDevExtension = CONTAINING_RECORD(pCsq, DEVICE_EXTENSION, CancelSafeQueue);
+	
+	if (!pDevExtension->pCurrentItrp)
+	{
+		pDevExtension->pCurrentItrp = pIrp;
+		nts = STATUS_UNSUCCESSFUL;
+	}
+	else
+	{
+		InsertTailList(&pDevExtension->IrpListHead, &pIrp->Tail.Overlay.ListEntry);
+		nts = STATUS_SUCCESS;
+	}
+
+	return nts;
+}
 
 extern "C" NTSTATUS
 DriverEntry(PDRIVER_OBJECT  pDriverObj,
@@ -413,6 +535,23 @@ DriverEntry(PDRIVER_OBJECT  pDriverObj,
     KeInitializeSpinLock(&pDevExtension->kSpinlock);
     InitializeListHead(&pDevExtension->ListHead);
     pDevExtension->ulUsers = 0;
+
+	nts = IoCsqInitializeEx(&pDevExtension->CancelSafeQueue, 
+		CsqInsertIrpEx,
+		CsqRemoveIrp,
+		CsqPeekNextIrp,
+		CsqAcquireLock,
+		CsqReleaseLock,
+		CsqCompleteCanceledIrp);
+
+	if (!NT_SUCCESS(nts))
+	{
+		IoDeleteDevice(pDeviceObj);
+		return nts;
+	}
+	KeInitializeSpinLock(&pDevExtension->IrpListLock);
+	InitializeListHead(&pDevExtension->IrpListHead);
+	pDevExtension->pCurrentItrp = NULL;
 
     nts = IoInitializeTimer(pDeviceObj,
                             OnTimer,

@@ -45,7 +45,7 @@
     <NMakeOutput>Driver.exe</NMakeOutput>
     <NMakeReBuildCommandLine>ddkbuild -W7XP free . -cZ</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>DBG=0;_NT_TARGET_VERSION=0x0501;_WIN32_WINNT=0x0501;_X86_;NTDDI_VERSION=0x05010200;WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>C:\WinDDK\7600.16385.1\inc\api;C:\WinDDK\7600.16385.1\inc\crt;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\wdf\kmdf\1.9;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>D:\WinDDK\7600.16385.1\inc\api;D:\WinDDK\7600.16385.1\inc\crt;D:\WinDDK\7600.16385.1\inc\ddk;D:\WinDDK\7600.16385.1\inc\wdf\kmdf\1.9;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
