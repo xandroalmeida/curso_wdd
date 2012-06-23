@@ -1,0 +1,4 @@
+TARGETNAME=ImgNotifier
+TARGETTYPE=DRIVER
+
+SOURCES=Driver.cpp

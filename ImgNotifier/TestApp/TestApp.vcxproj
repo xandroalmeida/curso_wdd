@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A437C44F-2216-4FEE-BE9E-217A52982BAA}</ProjectGuid>
+    <ProjectGuid>{9C74634D-862A-4E65-B284-CD66847BCEB5}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -35,16 +35,16 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <NMakeBuildCommandLine>ddkbuild -W7XP checked .</NMakeBuildCommandLine>
-    <NMakeOutput>Driver.exe</NMakeOutput>
+    <NMakeOutput>TestApp.exe</NMakeOutput>
     <NMakeReBuildCommandLine>ddkbuild -W7XP checked . -cZ</NMakeReBuildCommandLine>
     <NMakePreprocessorDefinitions>DBG=1;_NT_TARGET_VERSION=0x0501;_WIN32_WINNT=0x0501;_X86_;NTDDI_VERSION=0x05010200;WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
-    <NMakeIncludeSearchPath>D:\WinDDK\7600.16385.1\inc\api;D:\WinDDK\7600.16385.1\inc\crt;D:\WinDDK\7600.16385.1\inc\ddk;D:\WinDDK\7600.16385.1\inc\wdf\kmdf\1.9;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>C:\WinDDK\7600.16385.1\inc\api;C:\WinDDK\7600.16385.1\inc\crt;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\wdf\kmdf\1.9;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <NMakeBuildCommandLine>ddkbuild checked -W7XP .</NMakeBuildCommandLine>
-    <NMakeOutput>Driver.exe</NMakeOutput>
-    <NMakeReBuildCommandLine>ddkbuild checked -W7XP . -cZ</NMakeReBuildCommandLine>
-    <NMakePreprocessorDefinitions>DBG=1;_NT_TARGET_VERSION=0x0501;_WIN32_WINNT=0x0501;_X86_;NTDDI_VERSION=0x05010200;WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>ddkbuild -W7XP free .</NMakeBuildCommandLine>
+    <NMakeOutput>TestApp.exe</NMakeOutput>
+    <NMakeReBuildCommandLine>ddkbuild -W7XP free . -cZ</NMakeReBuildCommandLine>
+    <NMakePreprocessorDefinitions>DBG=0;_NT_TARGET_VERSION=0x0501;_WIN32_WINNT=0x0501;_X86_;NTDDI_VERSION=0x05010200;WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>C:\WinDDK\7600.16385.1\inc\api;C:\WinDDK\7600.16385.1\inc\crt;C:\WinDDK\7600.16385.1\inc\ddk;C:\WinDDK\7600.16385.1\inc\wdf\kmdf\1.9;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <ItemDefinitionGroup>
@@ -55,7 +55,10 @@
     <None Include="sources" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Driver.cpp" />
+    <ClCompile Include="TestApp.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Common\ImgNotifier.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

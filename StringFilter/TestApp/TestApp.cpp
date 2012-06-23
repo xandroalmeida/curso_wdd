@@ -8,8 +8,8 @@
 
 int __cdecl _tmain(int argc, _TCHAR* argv[])
 {
-    HANDLE  hDevice = NULL;
-    DWORD   dwError, dwBytes;
+    HANDLE              hDevice = NULL;
+    DWORD               dwError, dwBytes;
 
     __try
     {
